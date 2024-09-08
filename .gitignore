@@ -1,0 +1,33 @@
+# Node.js dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Docker
+*.log
+*.env
+data/
+
+# Environment files
+.env
+
+# IDEs and editors
+.vscode/
+.idea/
+
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# OS-specific files
+*.swp
+*.swo
+
+# Cypress
+cypress/videos/
+cypress/screenshots/

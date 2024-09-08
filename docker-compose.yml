@@ -1,0 +1,103 @@
+version: '2'
+services:
+  # User Service
+  user-service:
+    build: ./user-service
+    container_name: user-service
+    restart: always
+    ports:
+      - "${PORT_USER_SERVICE}:${PORT_USER_SERVICE}"
+    environment:
+      - MONGO_URI=${MONGO_URI}
+      - JWT_SECRET=${JWT_SECRET}
+      - PORT=${PORT_USER_SERVICE}
+  
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5433:${PORT_POSTGRES}"
+    volumes:
+      - "./data:/var/lib/postgresql/data"
+
+  # Command Service (Blog Write)
+  command-service:
+    build: ./command-service
+    container_name: command-service
+    restart: always
+    ports:
+      - "${PORT_COMMAND_SERVICE}:${PORT_COMMAND_SERVICE}"
+    depends_on:
+      - kafka
+      - user-service
+      - postgres
+    environment:
+      - DB_HOST=postgres
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - DB_NAME=${POSTGRES_DB}
+      - DB_PORT=${PORT_POSTGRES}
+      - JWT_SECRET=${JWT_SECRET}
+      - KAFKA_HOST=${KAFKA_HOST}
+      - USER_SERVICE_URL=${USER_SERVICE_URL}
+
+  # Query Service (Blog Read)
+  query-service:
+    build: ./query-service
+    container_name: query-service
+    restart: always
+    ports:
+      - "${PORT_QUERY_SERVICE}:${PORT_QUERY_SERVICE}"
+    depends_on:
+      - kafka
+      - command-service
+    environment:
+      - MONGO_URI=${MONGO_URI}
+      - KAFKA_HOST=${KAFKA_HOST}
+      - PORT=${PORT_QUERY_SERVICE}
+      - JWT_SECRET=${JWT_SECRET}
+      - USER_SERVICE_URL=${USER_SERVICE_URL}
+
+  # Kafka
+  kafka:
+    image: wurstmeister/kafka:latest
+    container_name: kafka
+    restart: always
+    ports:
+      - "${PORT_KAFKA}:${PORT_KAFKA}"
+      - "9093:9093"
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT_INTERNAL://kafka:${PORT_KAFKA},PLAINTEXT_EXTERNAL://localhost:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT_INTERNAL:PLAINTEXT,PLAINTEXT_EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:${PORT_ZOOKEEPER}
+      KAFKA_LISTENERS: PLAINTEXT_INTERNAL://0.0.0.0:${PORT_KAFKA},PLAINTEXT_EXTERNAL://0.0.0.0:9093
+
+  # Zookeeper for Kafka
+  zookeeper:
+    image: wurstmeister/zookeeper:latest
+    ports:
+      - "${PORT_ZOOKEEPER}:${PORT_ZOOKEEPER}"
+
+  # API Gateway
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    restart: always
+    ports:
+      - "5000:5000"
+    depends_on:
+      - user-service
+      - command-service
+      - query-service
+    environment:
+      - USER_SERVICE_URL=${USER_SERVICE_URL}
+      - COMMAND_SERVICE_URL=${COMMAND_SERVICE_URL}
+      - QUERY_SERVICE_URL=${QUERY_SERVICE_URL}

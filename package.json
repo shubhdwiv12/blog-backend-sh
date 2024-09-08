@@ -1,0 +1,15 @@
+{
+  "devDependencies": {
+    "cypress": "^13.14.2"
+  },
+  "scripts": {
+    "reset:userdb": "node scripts/resetUserDatabase.js",
+    "reset:commanddb": "node scripts/resetCommandDatabase.js",
+    "reset:querydb": "node scripts/resetQueryDatabase.js",
+    "reset:all": "npm run reset:userdb && npm run reset:commanddb && npm run reset:querydb"
+  },
+  "dependencies": {
+    "mongodb": "^6.8.1",
+    "pg": "^8.12.0"
+  }
+}
