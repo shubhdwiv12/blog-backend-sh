@@ -30,7 +30,7 @@ This project is a multi-service application that includes user management, blog 
    ```bash
    docker-compose up --build
 
-3. **To do End-to-End API Testing
+3. **To do End-to-End API Testing**
 
    ```bash
    npx cypress open
